@@ -15,10 +15,16 @@ DB_PORT="${POSTGRES_PORT:=5432}"
 DB_HOST="${POSTGRES_HOST:=localhost}"
 
 # docker container name
-CONTAINER_NAME="z2p_db"
+CONTAINER_NAME="${POSTGRES_DOCKER_CONTAINER_NAME:=z2pdb}"
+
+# if the docker container is running, kill it
+(docker ps | grep ${CONTAINER_NAME} && docker kill ${CONTAINER_NAME}) || true
 
 # remove previous container if it exists
 docker rm ${CONTAINER_NAME} || true
+
+# test grep
+docker ps -a | grep foobar || true
 
 # launch postgress using Docker
 docker run \
