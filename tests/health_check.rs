@@ -1,7 +1,7 @@
 //! tests/health_checks.rs
 
 use std::net::TcpListener;
-use zero2prod::run;
+use zero2prod::startup::run;
 
 fn spawn_app() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to random port");
