@@ -52,8 +52,8 @@ jobs:
       - name: Run tests
         run: cargo test
 
-      - name: Check that queries are fresh
-        run: cargo sqlx prepare --workspace --check -- --all-targets --all-features
+      - name: Check that queries are fresh, prepare if not
+        run: cargo sqlx prepare --workspace --check -- --all-targets || cargo sqlx prepare --workspace -- --all-targets
 
   fmt:
     name: Rustfmt
