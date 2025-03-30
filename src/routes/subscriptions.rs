@@ -5,13 +5,16 @@ use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+// let rust know that FormData is what this post body deserializes into
 #[derive(serde::Deserialize)]
 pub struct FormData {
     name: String,
     email: String,
 }
 
+// pool is the db connection pool
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> impl Responder {
+    // attempt to post data to sqlx db
     match sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, name, email, subscribed_at)
@@ -22,6 +25,8 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> im
         form.email,
         Utc::now()
     )
+    // use a connection from the connection pool to execute this query
+    // Data.get_ref returns PgPool
     .execute(pool.get_ref())
     .await
     {

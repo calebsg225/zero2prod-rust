@@ -11,18 +11,29 @@ pub struct TestApp {
     pub db_pool: PgPool,
 }
 
+// runs a tcp server
 async fn spawn_app() -> TestApp {
+    // create a new listener on an open port
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to random port");
+    // once a port is selected, figure out which port
     let port = listener.local_addr().unwrap().port();
+    // construct the address the listener is running on
     let address = format!("http://127.0.0.1:{}", port);
 
+    // import config options
     let mut config = get_config().expect("Failed to read config");
+    // generate a unique id
     config.database.database_name = Uuid::new_v4().to_string();
+    // create a pool of reusable postgres database connections
     let connection_pool = configure_database(&config.database).await;
 
+    // create a new tcp server
     let server = run(listener, connection_pool.clone()).expect("Failed to bind address");
+    // spawn a new async task running the newly created tcp server
     let _ = tokio::spawn(server);
 
+    // returns the address the server is running on for clients to send requests to
+    // returns the db connection pool for clients to concurrently send queries to
     TestApp {
         address,
         db_pool: connection_pool,
@@ -30,10 +41,12 @@ async fn spawn_app() -> TestApp {
 }
 
 pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
-    // connect database
+    // create a single db connection
     let mut connection = PgConnection::connect(&config.connection_string_without_db())
         .await
         .expect("Failed to connect to postgres");
+
+    // create a database on the connection
     connection
         .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
         .await
