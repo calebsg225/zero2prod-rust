@@ -22,6 +22,7 @@ impl DatabaseSettings {
         )
     }
 
+    // used for creating a new db for each test
     pub fn connection_string_without_db(&self) -> String {
         format!(
             "postgres://{}:{}@{}:{}",

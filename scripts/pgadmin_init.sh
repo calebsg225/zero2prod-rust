@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x
 set -eo pipefail
 
 PGADMIN_PORT="${PGADMIN_PORT:="5050"}"

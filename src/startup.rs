@@ -1,5 +1,6 @@
 //! src/startup.rs
 use actix_web::dev::Server;
+use actix_web::middleware::Logger;
 use actix_web::{App, HttpServer, web};
 use sqlx::PgPool;
 use std::net::TcpListener;
@@ -13,6 +14,8 @@ pub fn run(listener: TcpListener, connection: PgPool) -> Result<Server, std::io:
     // create a new tcp server
     let server = HttpServer::new(move || {
         App::new()
+            // use wrap() to add middlewares
+            .wrap(Logger::default())
             .route("/health_check", web::get().to(routes::health_check))
             .route("/subscriptions", web::post().to(routes::subscribe))
             .app_data(db_pool.clone())
