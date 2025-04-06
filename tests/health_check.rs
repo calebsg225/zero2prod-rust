@@ -2,17 +2,28 @@
 
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
+use std::sync::LazyLock;
 use uuid::Uuid;
 use zero2prod::configuration::{DatabaseSettings, get_config};
 use zero2prod::startup::run;
+use zero2prod::telemetry;
 
 pub struct TestApp {
     pub address: String,
     pub db_pool: PgPool,
 }
 
-// runs a tcp server
+// Ensure that the `tracing` stack is only initialized once using `LazyLock`
+static TRACING: LazyLock<()> = LazyLock::new(|| {
+    let subscriber = telemetry::get_subscriber("test".to_string(), "debug".to_string());
+    telemetry::init_subscriber(subscriber);
+});
+
+/// runs a test tcp server
 async fn spawn_app() -> TestApp {
+    // code in `TRACING` is run the first time, other times are ignored
+    LazyLock::force(&TRACING);
+
     // create a new listener on an open port
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to random port");
     // once a port is selected, figure out which port
