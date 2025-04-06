@@ -15,8 +15,21 @@ pub struct TestApp {
 
 // Ensure that the `tracing` stack is only initialized once using `LazyLock`
 static TRACING: LazyLock<()> = LazyLock::new(|| {
-    let subscriber = telemetry::get_subscriber("test".to_string(), "debug".to_string());
-    telemetry::init_subscriber(subscriber);
+    let sub_name = "test".to_string();
+    let default_filter_level = "debug".to_string();
+
+    match std::env::var("TEST_LOG") {
+        Ok(_) => {
+            let subscriber =
+                telemetry::get_subscriber(sub_name, default_filter_level, std::io::stdout);
+            telemetry::init_subscriber(subscriber);
+        }
+        Err(_) => {
+            let subscriber =
+                telemetry::get_subscriber(sub_name, default_filter_level, std::io::sink);
+            telemetry::init_subscriber(subscriber);
+        }
+    }
 });
 
 /// runs a test tcp server
