@@ -3,7 +3,6 @@
 use actix_web::{HttpResponse, Responder, web};
 use chrono::Utc;
 use sqlx::PgPool;
-use tracing::Instrument;
 use uuid::Uuid;
 
 // let rust know that FormData is what this post body deserializes into
@@ -13,29 +12,12 @@ pub struct FormData {
     email: String,
 }
 
-// pool is the db connection pool
-pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> impl Responder {
-    // generate unique request id
-    // used to keep track of different log spans that may be mixed up across threads
-    let req_id = Uuid::new_v4();
-    // create an info-level span
-    // prefix '%' implements Display for logging purposes
-    let req_span = tracing::info_span!(
-        "Adding a new subscriber.",
-        %req_id,
-        subscriber_email = %form.email,
-        subscriber_name = %form.name,
-    );
-
-    // creating the guard: when this is dropped, the log span is closed
-    // this is not good to use in async functions...
-    let _req_sp_guard = req_span.enter();
-
-    // create info-level span. Instead of calling 'enter', instrument will be used on the query
-    let query_span = tracing::info_span!("Saving new subscriber details in the database");
-
-    // attempt to post data to sqlx db
-    match sqlx::query!(
+#[tracing::instrument(
+    name = "Saving new subscriber details in the database",
+    skip(form, pool)
+)]
+pub async fn insert_subscriber(form: &FormData, pool: &PgPool) -> Result<(), sqlx::Error> {
+    sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, name, email, subscribed_at)
         VALUES ($1, $2, $3, $4)
@@ -46,23 +28,35 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> im
         Utc::now()
     )
     // use a connection from the connection pool to execute this query
-    // Data.get_ref returns PgPool
-    .execute(pool.get_ref())
-    // instrument this query with query_span: enters the span when this future is polled
-    .instrument(query_span)
+    .execute(pool)
+    // no need to use `instrument()` here: `#[tracing::instrument()]` takes care of that
     .await
-    {
-        Ok(_) => {
-            tracing::info!(
-                "request_id {} - Saving new subscriber details in the database",
-                req_id
-            );
-            HttpResponse::Ok()
-        }
-        Err(e) => {
-            tracing::error!("request_id {} - Failed to execute query: {:?}", req_id, e);
-            HttpResponse::InternalServerError()
-        }
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
+}
+
+// creates a span at the beginning of the function invocation
+#[tracing::instrument(
+    // if `name` is ommitied, function name is used as default
+    name = "Adding a new subscriber",
+    // ignore `form` and `pool` logs
+    skip(form, pool),
+    // prefix '%' implements Display for logging purposes
+    fields(
+        request_id = %Uuid::new_v4(),
+        subscriber_email = %form.email,
+        subscriber_name = %form.name,
+    )
+)]
+// pool is the db connection pool
+pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> impl Responder {
+    // attempt to post data to sqlx db
+    match insert_subscriber(&form, &pool).await {
+        Ok(_) => HttpResponse::Ok(),
+        Err(_) => HttpResponse::InternalServerError(),
     }
     .finish()
 }
