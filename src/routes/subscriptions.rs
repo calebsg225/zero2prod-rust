@@ -46,7 +46,6 @@ pub async fn insert_subscriber(form: &FormData, pool: &PgPool) -> Result<(), sql
     skip(form, pool),
     // prefix '%' implements Display for logging purposes
     fields(
-        request_id = %Uuid::new_v4(),
         subscriber_email = %form.email,
         subscriber_name = %form.name,
     )

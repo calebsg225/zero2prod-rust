@@ -1,5 +1,6 @@
 //! main.rs
 
+use secrecy::ExposeSecret;
 use sqlx::PgPool;
 use std::net::TcpListener;
 use zero2prod::configuration::get_config;
@@ -22,7 +23,7 @@ async fn main() -> Result<(), std::io::Error> {
     let listener = TcpListener::bind(address)?;
 
     // create a pool of reusable postgres database connections
-    let connection_pool = PgPool::connect(&config.database.connection_string())
+    let connection_pool = PgPool::connect(&config.database.connection_string().expose_secret())
         .await
         .expect("Failed to connect to postgres");
 

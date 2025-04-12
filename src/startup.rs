@@ -1,13 +1,12 @@
 //! src/startup.rs
-use actix_web::dev::Server;
-use actix_web::middleware::Logger;
-use actix_web::{App, HttpServer, web};
+use actix_web::{App, HttpServer, dev, web};
 use sqlx::PgPool;
 use std::net::TcpListener;
+use tracing_actix_web::TracingLogger;
 
 use crate::routes;
 
-pub fn run(listener: TcpListener, connection: PgPool) -> Result<Server, std::io::Error> {
+pub fn run(listener: TcpListener, connection: PgPool) -> Result<dev::Server, std::io::Error> {
     // wrap the connection pool in web::Data extractor so that the pool can be accessed by
     // httpserver routes
     let db_pool = web::Data::new(connection);
@@ -15,7 +14,8 @@ pub fn run(listener: TcpListener, connection: PgPool) -> Result<Server, std::io:
     let server = HttpServer::new(move || {
         App::new()
             // use wrap() to add middlewares
-            .wrap(Logger::default())
+            // TracingLogger replaces Logger. TracingLogger is tracing-aware.
+            .wrap(TracingLogger::default())
             .route("/health_check", web::get().to(routes::health_check))
             .route("/subscriptions", web::post().to(routes::subscribe))
             .app_data(db_pool.clone())
