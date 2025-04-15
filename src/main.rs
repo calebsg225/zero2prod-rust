@@ -17,7 +17,7 @@ async fn main() -> Result<(), std::io::Error> {
     let config = get_config().expect("failed to read configuration file");
 
     // generate the address to run the backend from based on configuration options
-    let address = format!("127.0.0.1:{}", config.application_port);
+    let address = format!("{}:{}", config.application.host, config.application.port);
 
     // bind a server listener to the address the backend will be running on
     let listener = TcpListener::bind(address)?;
