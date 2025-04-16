@@ -14,7 +14,18 @@ services:
     health_check:
       http_path: /health_check
     http_port: 8000
+    # less is cheaper
     instance_count: 1
-    instance_size_slug: basic-xxs
+    # cheapest plan: lowest specs
+    instance_size_slug: apps-s-1vcpu-0.5gb
     routes:
       - path: /
+databases:
+    # PG = Postgres
+  - engine: PG
+    # db name
+    name: newsletter
+    # less is cheaper
+    num_nodes: 1
+    size: db-s-1vcpu-1gb
+    version: "16"
