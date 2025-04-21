@@ -1,9 +1,9 @@
 # Zero2Prod
 A Rust project built by following along with [Zero To Production In Rust - Luca Palmieri](https://www.zero2prod.com/index.html).
 
-Docker is required for proper installation.
-
 ## Installation
+
+Docker is required for proper installation.
 
 ### clone the repo:
 ```
@@ -16,29 +16,32 @@ cd zero2prod-rust
 ### Build the docker image:
 Replace [IMAGE_NAME] with desired image name.
 ```
-:~$ docker build --tag [IMAGE_NAME] --file Dockerfile .
+docker build --tag [IMAGE_NAME] --file Dockerfile .
 ```
 
 ### Run the docker container in the background on port 8001:
 Replace [CONTAINER_NAME] with desired container name.
 ```
-:~$ docker run -d -p 8001:8000 --name [CONTAINER_NAME] [IMAGE_NAME]
+docker run -d -p 8001:8000 --name [CONTAINER_NAME] [IMAGE_NAME]
 ```
 
 ### You should see the new container when running `docker ps`:
 ```
-:~$ docker ps
-
+docker ps
+```
+output:
+```
 CONTAINER ID   IMAGE          COMMAND         CREATED        STATUS        PORTS                                         NAMES
 45f5f4c516e6   [IMAGE_NAME]   "./zero2prod"   1 minute ago   Up 1 minute   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp   [CONTAINER_NAME]
 
 ```
 
 ### Check the health of the application
-A 200 status means the application is running properly
 ```
-:~$ curl http://localhost:8001/health_check -v
-
+curl http://localhost:8001/health_check -v
+```
+output:
+```
 * Host localhost:8001 was resolved.
 * IPv6: ::1
 * IPv4: 127.0.0.1
@@ -55,3 +58,4 @@ A 200 status means the application is running properly
 < 
 * Connection #0 to host localhost left intact
 ```
+A 200 status means the application is running properly
